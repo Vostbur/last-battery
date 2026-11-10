@@ -863,3 +863,20 @@ h2 {
   0% { transform: translateY(-2px) scale(1.03); filter: drop-shadow(0 0 18px rgba(201, 162, 39, 0.75)); }
   100% { transform: translateY(0) scale(1); }
 }
+
+
+.npc-dialog {
+  backdrop-filter: blur(3px);
+}
+
+.npc-dialog-subtitle {
+  min-height: 14px;
+}
+
+.scene-entity[data-kind="npc"][data-state="helped"] {
+  filter: drop-shadow(0 0 8px rgba(111, 143, 106, 0.5));
+}
+
+.scene-entity[data-kind="door"][data-state="open"] {
+  filter: drop-shadow(0 0 12px rgba(201, 162, 39, 0.42));
+}
