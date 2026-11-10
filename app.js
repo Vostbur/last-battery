@@ -210,6 +210,8 @@ const INITIAL_STATE = {
     game_won: false
   },
 
+  milestones: [],
+
   selectedItem: null,
   dialogNpc: null,
   messages: [],
@@ -440,6 +442,20 @@ function takeItem(itemId) {
   removeEntityFromLocation(entity.id);
 
   addMessage("Взято: " + item.name + ".");
+
+  if (itemId === "flask") {
+    unlockMilestone(
+      "found_flask",
+      "Фляга почти полная. Значит, у тебя ещё есть шанс помочь кому-то до того, как вода закончится."
+    );
+  }
+
+  if (itemId === "filter") {
+    unlockMilestone(
+      "found_market_filter",
+      "Под слоем пыли виден рабочий фильтр. Первый намёк на то, что рынок ещё не совсем мёртв."
+    );
+  }
 }
 
 function addInventory(itemId, amount) {
@@ -679,6 +695,10 @@ function handleNpcTopic(npcId, topicId) {
     addInventory("code", 1);
     addMessage("Торговец забирает оба фильтра. «Держи. Не потеряй».");
     addMessage("Код тяжёлый и тёплый от его ладони. Похоже, его давно не использовали.");
+    unlockMilestone(
+      "got_bunker_code",
+      "На металлической пластине выцарапано: «Северная дверь. Не доверяй автоматике». Похоже, кто-то оставил это для следующего выжившего."
+    );
     return;
   }
 
@@ -730,6 +750,10 @@ function giveWaterToWounded() {
   state.selectedItem = null;
 
   addMessage("Раненый жадно пьёт и протягивает вам фильтр.");
+  unlockMilestone(
+    "helped_wounded",
+    "На секунду кажется, что здесь ещё можно кому-то помочь. Раненый шепчет про торговца и два фильтра."
+  );
   flashEntity("wounded");
 }
 
@@ -745,6 +769,10 @@ function openBunkerDoor() {
   state.selectedItem = null;
 
   addMessage("Код принят. Тяжёлая дверь открывается.");
+  unlockMilestone(
+    "opened_bunker_door",
+    "Из щели тянет холодным воздухом. За дверью нет света — только глухой гул глубоко под землёй."
+  );
   flashEntity("bunker_door");
 }
 
@@ -788,8 +816,12 @@ function moveTo(locationId) {
 
     if (locationId === "bunker") {
       state.flags.game_won = true;
+      unlockMilestone(
+        "entered_bunker",
+        "Дверь закрывается за спиной. В темноте постепенно проступает огромная машина. На панели ещё горит один зелёный индикатор."
+      );
       addMessage("Ты входишь в бункер. Здесь действительно есть работающая батарея.");
-      setTimeout(showWinScreen, 500);
+      setTimeout(showWinScreen, 700);
     }
 
     render();
@@ -1260,6 +1292,20 @@ function updateTargetHighlighting() {
 // 12. ЖУРНАЛ
 // ============================================================
 
+function unlockMilestone(id, message) {
+  if (state.milestones.includes(id)) {
+    return false;
+  }
+
+  state.milestones.push(id);
+
+  if (message) {
+    addMessage(message);
+  }
+
+  return true;
+}
+
 function addMessage(message) {
   state.messages.unshift({
     id: Date.now() + Math.random(),
@@ -1295,7 +1341,28 @@ function updateLocationText() {
   const location = GAME_DATA.locations[state.location];
 
   DOM.locationName.textContent = location.name;
-  DOM.locationDescription.textContent = location.description;
+
+  let description = location.description;
+
+  if (state.location === "shelter" && state.milestones.includes("found_flask")) {
+    description = "Бетонная коробка стала тише. На полу осталось только пустое место, где лежала фляга; на восток — рынок.";
+  }
+
+  if (state.location === "market" && state.flags.wounded_watered) {
+    description = "Ржавые контейнеры, уже знакомый раненый, торговец и открытая дорога к северной двери. Здесь стало чуть меньше безысходности.";
+  }
+
+  if (state.location === "market" && state.flags.bunker_door_open) {
+    description = "Ржавые контейнеры остаются позади. Северная дверь открыта, и из проёма тянет холодом.";
+  }
+
+  if (state.location === "bunker") {
+    description = state.flags.game_won
+      ? "Тяжёлая дверь закрылась. В темноте работает машина, которой здесь не должно было быть."
+      : location.description;
+  }
+
+  DOM.locationDescription.textContent = description;
 }
 
 function updateObjective() {
@@ -1342,6 +1409,7 @@ function renderDebug() {
     "wounded_watered: " + state.flags.wounded_watered,
     "bunker_door_open: " + state.flags.bunker_door_open,
     "game_won: " + state.flags.game_won,
+    "milestones: " + (state.milestones.join(", ") || "none"),
     "selected: " + (state.selectedItem || "none"),
     "last action: " + state.lastAction,
     "fallback: " + state.fallbackLevel
@@ -1373,6 +1441,7 @@ function saveGame(silent = false) {
         location: state.location,
         inventory: state.inventory,
         flags: state.flags,
+        milestones: state.milestones,
         selectedItem: null,
         messages: state.messages
       }
@@ -1422,6 +1491,9 @@ function loadGame() {
       ...restored.flags,
       ...(payload.state.flags || {})
     };
+    restored.milestones = Array.isArray(payload.state.milestones)
+      ? payload.state.milestones
+      : [];
     restored.messages = Array.isArray(payload.state.messages)
       ? payload.state.messages.slice(0, 6)
       : [];
