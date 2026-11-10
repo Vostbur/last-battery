@@ -197,6 +197,8 @@ const GAME_DATA = {
 // 2. СОСТОЯНИЕ
 // ============================================================
 
+const SAVE_KEY = "last-battery-save-v1";
+
 const INITIAL_STATE = {
   location: "shelter",
 
@@ -239,6 +241,12 @@ const DOM = {
   debugToggle: document.getElementById("debug-toggle"),
   debugPanel: document.getElementById("debug-panel"),
   restartButton: document.getElementById("restart-button"),
+  saveButton: document.getElementById("save-button"),
+  loadButton: document.getElementById("load-button"),
+  startOverlay: document.getElementById("start-overlay"),
+  startNew: document.getElementById("start-new"),
+  startContinue: document.getElementById("start-continue"),
+  startSaveStatus: document.getElementById("start-save-status"),
   winOverlay: document.getElementById("win-overlay"),
   winRestart: document.getElementById("win-restart"),
   minimapImage: document.getElementById("minimap-image"),
@@ -259,11 +267,25 @@ function init() {
 
   addMessage("Ты приходишь в себя в убежище. Если верить слухам, в бункере ещё есть батарея.");
   render();
+  updateStartScreen();
 }
 
 function bindGlobalEvents() {
   DOM.restartButton.addEventListener("click", resetGame);
   DOM.winRestart.addEventListener("click", resetGame);
+  DOM.saveButton.addEventListener("click", saveGame);
+  DOM.loadButton.addEventListener("click", loadGame);
+  DOM.startNew.addEventListener("click", () => {
+    resetGame();
+    hideStartScreen();
+  });
+  DOM.startContinue.addEventListener("click", () => {
+    if (!loadGame()) {
+      addMessage("Сохранение не найдено. Начинаем новую игру.");
+    }
+    hideStartScreen();
+    render();
+  });
 
   DOM.debugToggle.addEventListener("click", () => {
     state.debug = !state.debug;
@@ -354,6 +376,9 @@ function dispatchAction(action) {
   }
 
   render();
+  if (action.type !== "RESET_GAME") {
+    saveGame(true);
+  }
 }
 
 // ============================================================
@@ -1101,10 +1126,112 @@ function showWinScreen() {
   }
 
   DOM.winOverlay.hidden = false;
+  hideStartScreen();
 }
 
 function hideWinScreen() {
   DOM.winOverlay.hidden = true;
+}
+
+function saveGame(silent = false) {
+  try {
+    const payload = {
+      version: 1,
+      state: {
+        location: state.location,
+        inventory: state.inventory,
+        flags: state.flags,
+        selectedItem: null,
+        messages: state.messages
+      }
+    };
+
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    updateStartScreen();
+
+    if (!silent) {
+      addMessage("Игра сохранена.");
+      render();
+    }
+
+    return true;
+  } catch (error) {
+    if (!silent) {
+      addMessage("Не удалось сохранить игру.");
+      render();
+    }
+    return false;
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+
+    if (!raw) {
+      if (!DOM.startSaveStatus) {
+        return false;
+      }
+      return false;
+    }
+
+    const payload = JSON.parse(raw);
+
+    if (!payload || payload.version !== 1 || !payload.state) {
+      throw new Error("Invalid save");
+    }
+
+    const restored = createInitialState();
+    restored.location = GAME_DATA.locations[payload.state.location]
+      ? payload.state.location
+      : "shelter";
+    restored.inventory = payload.state.inventory || {};
+    restored.flags = {
+      ...restored.flags,
+      ...(payload.state.flags || {})
+    };
+    restored.messages = Array.isArray(payload.state.messages)
+      ? payload.state.messages.slice(0, 6)
+      : [];
+
+    state = restored;
+    restoreLocationEntities();
+    hideWinScreen();
+    clearSceneDialog();
+    addMessage("Сохранение загружено.");
+    render();
+    updateStartScreen();
+    return true;
+  } catch (error) {
+    localStorage.removeItem(SAVE_KEY);
+    return false;
+  }
+}
+
+function hasSaveGame() {
+  try {
+    return Boolean(localStorage.getItem(SAVE_KEY));
+  } catch (error) {
+    return false;
+  }
+}
+
+function updateStartScreen() {
+  const hasSave = hasSaveGame();
+  DOM.startContinue.disabled = !hasSave;
+  DOM.startContinue.classList.toggle("subtle", !hasSave);
+  DOM.startSaveStatus.textContent = hasSave
+    ? "Сохранение найдено"
+    : "Сохранений пока нет";
+}
+
+function hideStartScreen() {
+  DOM.startOverlay.hidden = true;
+}
+
+function showStartScreen() {
+  DOM.startOverlay.hidden = false;
+  updateStartScreen();
 }
 
 function resetGame() {
@@ -1119,6 +1246,8 @@ function resetGame() {
 
   addMessage("Игра начата заново.");
   render();
+  saveGame(true);
+  updateStartScreen();
 }
 
 function restoreLocationEntities() {
