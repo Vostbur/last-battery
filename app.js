@@ -239,6 +239,7 @@ const DOM = {
   selectedItemLabel: document.getElementById("selected-item-label"),
   journal: document.getElementById("journal"),
   journalStatus: document.getElementById("journal-status"),
+  objective: document.getElementById("objective"),
   debugToggle: document.getElementById("debug-toggle"),
   debugPanel: document.getElementById("debug-panel"),
   restartButton: document.getElementById("restart-button"),
@@ -551,6 +552,24 @@ function renderNpcTopics(npcId) {
     button.className = "dialog-topic";
     button.textContent = topic.label;
 
+    if (
+      npcId === "wounded" &&
+      topic.id === "filters" &&
+      state.flags.wounded_watered
+    ) {
+      button.textContent = "Про фильтр (уже отдан)";
+      button.disabled = true;
+    }
+
+    if (
+      npcId === "trader" &&
+      topic.id === "code" &&
+      hasItem("code")
+    ) {
+      button.textContent = "Про код (уже получен)";
+      button.disabled = true;
+    }
+
     button.addEventListener("click", () => {
       dispatchAction({
         type: "SELECT_TOPIC",
@@ -740,6 +759,7 @@ function render() {
   renderJournal();
   renderDebug();
   updateLocationText();
+  updateObjective();
 
   if (state.flags.game_won) {
     // Оверлей показывается с небольшой задержкой после входа.
@@ -869,7 +889,10 @@ function attachEntityAction(button, entity) {
         return;
       }
 
-      addMessage("Этот предмет здесь не применяется.");
+      const targetName = entity.label || "это";
+      addMessage("«" + targetName + "» не подходит для " + GAME_DATA.items[state.selectedItem].name.toLowerCase() + ".");
+      state.selectedItem = null;
+      render();
       return;
     }
 
@@ -1122,6 +1145,28 @@ function updateLocationText() {
 
   DOM.locationName.textContent = location.name;
   DOM.locationDescription.textContent = location.description;
+}
+
+function updateObjective() {
+  let objective = "Найди воду и помоги раненому.";
+
+  if (state.flags.game_won) {
+    objective = "Бункер найден. Батарея у тебя перед глазами.";
+  } else if (state.flags.bunker_door_open) {
+    objective = "Войди в открытый бункер.";
+  } else if (hasItem("code")) {
+    objective = "Используй код на двери бункера.";
+  } else if (hasItem("filter", 2)) {
+    objective = "Отнеси два фильтра торговцу.";
+  } else if (state.flags.wounded_watered) {
+    objective = "Найди второй фильтр и поговори с торговцем.";
+  } else if (hasItem("flask")) {
+    objective = "Дай воду раненому.";
+  } else if (state.location === "shelter") {
+    objective = "Возьми флягу и отправляйся на рынок.";
+  }
+
+  DOM.objective.textContent = objective;
 }
 
 // ============================================================
