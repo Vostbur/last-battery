@@ -477,7 +477,10 @@ function takeItem(itemId) {
   // Если взят один из выброшенных экземпляров — уменьшаем только
   // количество выброшенных экземпляров.
   if (hasOriginalWorldItem(itemId, state.location)) {
-    unlockMilestone("found_" + itemId, "Предмет найден.");
+    const foundMilestone = "found_" + itemId;
+    if (!state.milestones.includes(foundMilestone)) {
+      state.milestones.push(foundMilestone);
+    }
   } else {
     removeDroppedItemFromLocation(itemId);
   }
