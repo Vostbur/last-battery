@@ -32,9 +32,11 @@ python -m http.server 8000
 
 ## GitHub Pages
 
-Проект подготовлен для публикации через **GitHub Pages** с использованием GitHub Actions. Workflow находится в `.github/workflows/pages.yml`.
+Проект публикуется через **GitHub Pages** с использованием GitHub Actions.
 
-После включения Pages для репозитория с источником **GitHub Actions** каждый push в ветку `main` будет автоматически публиковать актуальную версию игры.
+**Играть онлайн:** https://vostbur.github.io/last-battery/
+
+Workflow находится в `.github/workflows/pages.yml`. Каждый push в ветку `main` автоматически публикует актуальную версию игры.
 
 ## Лицензия
 
