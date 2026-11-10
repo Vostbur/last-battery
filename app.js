@@ -226,6 +226,14 @@ const INITIAL_STATE = {
 
   inventory: {},
 
+  // Количество предметов, выброшенных на сцену по локациям.
+  // Нужен отдельный учёт, чтобы одинаковые предметы не терялись.
+  droppedItems: {
+    shelter: {},
+    market: {},
+    bunker: {}
+  },
+
   flags: {
     wounded_watered: false,
     bunker_door_open: false,
@@ -465,6 +473,15 @@ function takeItem(itemId) {
   addInventory(itemId, 1);
   removeEntityFromLocation(entity.id);
 
+  // Если взят оригинальный предмет из мира — фиксируем это вехой.
+  // Если взят один из выброшенных экземпляров — уменьшаем только
+  // количество выброшенных экземпляров.
+  if (hasOriginalWorldItem(itemId, state.location)) {
+    unlockMilestone("found_" + itemId, "Предмет найден.");
+  } else {
+    removeDroppedItemFromLocation(itemId);
+  }
+
   addMessage("Взято: " + item.name + ".");
 
   if (itemId === "flask") {
@@ -508,8 +525,48 @@ function hasItem(itemId, amount = 1) {
 
 function removeEntityFromLocation(entityId) {
   const location = GAME_DATA.locations[state.location];
+  const index = location.entities.indexOf(entityId);
 
-  location.entities = location.entities.filter((id) => id !== entityId);
+  // Удаляем только один экземпляр. Это важно для двух одинаковых
+  // предметов, находящихся одновременно на сцене.
+  if (index !== -1) {
+    location.entities.splice(index, 1);
+  }
+}
+
+function hasOriginalWorldItem(itemId, locationId) {
+  if (locationId === "shelter" && itemId === "flask") {
+    return !state.milestones.includes("found_flask");
+  }
+
+  if (locationId === "market" && itemId === "filter") {
+    return !state.milestones.includes("found_market_filter");
+  }
+
+  if (locationId === "market" && itemId === "lamp") {
+    return !state.milestones.includes("found_lamp");
+  }
+
+  return false;
+}
+
+function addDroppedItemToLocation(itemId) {
+  const locationItems = state.droppedItems[state.location] || {};
+  locationItems[itemId] = (locationItems[itemId] || 0) + 1;
+  state.droppedItems[state.location] = locationItems;
+}
+
+function removeDroppedItemFromLocation(itemId) {
+  const locationItems = state.droppedItems[state.location] || {};
+  const current = locationItems[itemId] || 0;
+
+  if (current <= 1) {
+    delete locationItems[itemId];
+  } else {
+    locationItems[itemId] = current - 1;
+  }
+
+  state.droppedItems[state.location] = locationItems;
 }
 
 function dropItem(itemId) {
@@ -527,13 +584,11 @@ function dropItem(itemId) {
 
   removeInventory(itemId, 1);
 
-  const existingEntity = GAME_DATA.locations[state.location].entities
-    .map((id) => GAME_DATA.entities[id])
-    .find((entity) => entity.itemId === itemId);
-
-  if (!existingEntity) {
-    addEntityToCurrentLocation(itemId);
-  }
+  // Каждый выброшенный экземпляр должен существовать отдельно.
+  // Не проверяем наличие такого же предмета на сцене: два фильтра
+  // могут лежать одновременно.
+  addEntityToCurrentLocation(itemId);
+  addDroppedItemToLocation(itemId);
 
   state.selectedItem = null;
   addMessage("Предмет возвращён на сцену.");
@@ -541,10 +596,7 @@ function dropItem(itemId) {
 
 function addEntityToCurrentLocation(itemId) {
   const location = GAME_DATA.locations[state.location];
-
-  if (!location.entities.includes(itemId)) {
-    location.entities.push(itemId);
-  }
+  location.entities.push(itemId);
 }
 
 function getSceneStateNote(entity) {
@@ -1689,6 +1741,7 @@ function saveGame(silent = false) {
       state: {
         location: state.location,
         inventory: state.inventory,
+        droppedItems: state.droppedItems,
         flags: state.flags,
         milestones: state.milestones,
         selectedItem: null,
@@ -1736,6 +1789,11 @@ function loadGame() {
       ? payload.state.location
       : "shelter";
     restored.inventory = payload.state.inventory || {};
+    restored.droppedItems = {
+      shelter: { ...(payload.state.droppedItems?.shelter || {}) },
+      market: { ...(payload.state.droppedItems?.market || {}) },
+      bunker: { ...(payload.state.droppedItems?.bunker || {}) }
+    };
     restored.flags = {
       ...restored.flags,
       ...(payload.state.flags || {})
@@ -1832,6 +1890,25 @@ function restoreLocationEntities() {
   if (!state.milestones.includes("found_market_filter")) {
     GAME_DATA.locations.market.entities.splice(2, 0, "filter");
   }
+
+  // Предметы, выброшенные игроком, восстанавливаются в том же количестве.
+  Object.entries(state.droppedItems.market || {}).forEach(([itemId, count]) => {
+    for (let i = 0; i < count; i += 1) {
+      GAME_DATA.locations.market.entities.push(itemId);
+    }
+  });
+
+  Object.entries(state.droppedItems.shelter || {}).forEach(([itemId, count]) => {
+    for (let i = 0; i < count; i += 1) {
+      GAME_DATA.locations.shelter.entities.push(itemId);
+    }
+  });
+
+  Object.entries(state.droppedItems.bunker || {}).forEach(([itemId, count]) => {
+    for (let i = 0; i < count; i += 1) {
+      GAME_DATA.locations.bunker.entities.push(itemId);
+    }
+  });
 
   // Финальные объекты бункера являются частью постоянной сцены и не
   // должны исчезать после загрузки сохранения.
