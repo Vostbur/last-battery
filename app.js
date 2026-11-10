@@ -434,9 +434,9 @@ function dispatchAction(action) {
 
   if (action.type !== "MOVE") {
     render();
-  }
-  if (action.type !== "RESET_GAME") {
-    saveGame(true);
+    if (action.type !== "RESET_GAME") {
+      saveGame(true);
+    }
   }
 }
 
@@ -996,6 +996,7 @@ function moveTo(locationId) {
     }
 
     render();
+    saveGame(true);
   };
 
   playSceneTransition(enterLocation);
