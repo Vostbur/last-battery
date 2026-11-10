@@ -750,7 +750,6 @@ function render() {
 function renderScene() {
   DOM.scene.innerHTML = "";
   DOM.sceneFallback.hidden = true;
-  clearSceneDialog();
 
   const location = GAME_DATA.locations[state.location];
 
