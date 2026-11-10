@@ -1907,12 +1907,6 @@ function restoreLocationEntities() {
     }
   });
 
-  Object.entries(state.droppedItems.bunker || {}).forEach(([itemId, count]) => {
-    for (let i = 0; i < count; i += 1) {
-      GAME_DATA.locations.bunker.entities.push(itemId);
-    }
-  });
-
   // Финальные объекты бункера являются частью постоянной сцены и не
   // должны исчезать после загрузки сохранения.
   GAME_DATA.locations.bunker.entities = [
@@ -1921,6 +1915,12 @@ function restoreLocationEntities() {
     "bunker_battery",
     "exit_south"
   ];
+
+  Object.entries(state.droppedItems.bunker || {}).forEach(([itemId, count]) => {
+    for (let i = 0; i < count; i += 1) {
+      GAME_DATA.locations.bunker.entities.push(itemId);
+    }
+  });
 }
 
 // ============================================================
