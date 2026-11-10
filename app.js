@@ -567,17 +567,45 @@ function getSceneStateNote(entity) {
   if (entity.id === "bunker_panel") {
     return state.flags.bunker_panel_inspected
       ? "На панели горит один зелёный индикатор."
-      : "Панель обесточена.";
+      : state.flags.bunker_machine_inspected
+        ? "Машина запущена. Панель ждёт переключения."
+        : "Панель обесточена. Сначала осмотри машину.";
   }
 
   if (entity.id === "bunker_battery") {
     return state.flags.game_won
       ? "Батарея работает. Последняя."
-      : "Корпус цел. Похоже, она всё ещё жива.";
+      : state.flags.bunker_panel_inspected
+        ? "Система активна. Батарея готова."
+        : "Корпус цел. Сначала запусти систему.";
   }
 
   if (entity.id === "lamp") {
     return "Фонарь сломан и больше не пригоден.";
+  }
+
+  return "";
+}
+
+function getEntityStateClass(entity) {
+  if (entity.id === "bunker_machine") {
+    return state.flags.bunker_machine_inspected ? "state-active" : "state-dormant";
+  }
+
+  if (entity.id === "bunker_panel") {
+    if (state.flags.bunker_panel_inspected) {
+      return "state-active";
+    }
+
+    return state.flags.bunker_machine_inspected ? "state-ready" : "state-dormant";
+  }
+
+  if (entity.id === "bunker_battery") {
+    return state.flags.game_won
+      ? "state-active"
+      : state.flags.bunker_panel_inspected
+        ? "state-ready"
+        : "state-dormant";
   }
 
   return "";
@@ -1104,6 +1132,10 @@ function renderEntity(entity) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "scene-entity";
+  const entityStateClass = getEntityStateClass(entity);
+  if (entityStateClass) {
+    button.classList.add(entityStateClass);
+  }
   button.dataset.entityId = entity.id;
   button.dataset.kind = entity.kind;
   if (entity.atmosphereOnly) {
