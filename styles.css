@@ -294,6 +294,30 @@ h2 {
   transition: opacity 120ms ease;
 }
 
+/* Состояния финальной сцены: машина → панель → батарея. */
+.scene-entity.state-dormant {
+  opacity: 0.78;
+  filter: saturate(0.72) brightness(0.86);
+}
+
+.scene-entity.state-ready {
+  filter: drop-shadow(0 0 10px rgba(128, 190, 120, 0.38));
+}
+
+.scene-entity.state-active {
+  filter: drop-shadow(0 0 14px rgba(150, 220, 130, 0.58));
+  animation: finale-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes finale-pulse {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 .scene-entity:hover .entity-label {
   opacity: 1;
 }
