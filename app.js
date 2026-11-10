@@ -113,14 +113,14 @@ const GAME_DATA = {
     wounded: {
       id: "wounded",
       kind: "npc",
-      position: { x: 200, y: 340, w: 170, h: 300 },
+      position: { x: 110, y: 300, w: 360, h: 360 },
       label: "Раненый"
     },
 
     trader: {
       id: "trader",
       kind: "npc",
-      position: { x: 800, y: 320, w: 190, h: 320 },
+      position: { x: 700, y: 285, w: 360, h: 360 },
       label: "Торговец"
     },
 
@@ -128,7 +128,7 @@ const GAME_DATA = {
       id: "exit_east",
       kind: "exit",
       target: "market",
-      position: { x: 825, y: 90, w: 235, h: 470 },
+      position: { x: 1040, y: 95, w: 220, h: 500 },
       label: "Выйти через дверь → Рынок",
       hotspotOnly: true
     },
@@ -137,33 +137,33 @@ const GAME_DATA = {
       id: "exit_north",
       kind: "exit",
       target: "bunker",
-      position: { x: 555, y: 40, w: 170, h: 80 },
-      label: "На север → Бункер",
-      sprite: "assets/sprites/exit_north.png"
+      position: { x: 500, y: 105, w: 200, h: 255 },
+      label: "Через дверь → Бункер",
+      hotspotOnly: true
     },
 
     exit_west: {
       id: "exit_west",
       kind: "exit",
       target: "shelter",
-      position: { x: 30, y: 340, w: 200, h: 280 },
-      label: "На запад → Убежище",
-      sprite: "assets/sprites/exit_west.png"
+      position: { x: 0, y: 300, w: 185, h: 390 },
+      label: "Через проход → Убежище",
+      hotspotOnly: true
     },
 
     exit_south: {
       id: "exit_south",
       kind: "exit",
       target: "market",
-      position: { x: 560, y: 620, w: 160, h: 100 },
-      label: "На юг → Рынок",
-      sprite: "assets/sprites/exit_south.png"
+      position: { x: 490, y: 600, w: 300, h: 120 },
+      label: "Через дверь → Рынок",
+      hotspotOnly: true
     },
 
     bunker_door: {
       id: "bunker_door",
       kind: "door",
-      position: { x: 570, y: 50, w: 140, h: 240 },
+      position: { x: 500, y: 105, w: 200, h: 255 },
       label: "Дверь в бункер",
       spriteLocked: "assets/sprites/door_locked.png",
       spriteOpen: "assets/sprites/door_open.png"
