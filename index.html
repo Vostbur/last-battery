@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Последняя батарея</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="game-shell" aria-label="Игра Последняя батарея">
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">ПОСТАПОКАЛИПСИС · POINT &amp; CLICK</div>
+          <h1>Последняя батарея</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="debug-toggle" class="ui-button subtle" type="button">DEBUG: ВЫКЛ</button>
+          <button id="restart-button" class="ui-button" type="button">Начать заново</button>
+        </div>
+      </div>
+
+      <div class="main-layout">
+        <section class="scene-panel">
+          <div id="scene-viewport" class="scene-viewport">
+            <div id="scene" class="scene" aria-label="Игровая сцена"></div>
+            <div id="scene-fallback" class="scene-fallback" hidden></div>
+          </div>
+          <div class="scene-caption">
+            <span id="location-name">Убежище</span>
+            <span id="location-description"></span>
+          </div>
+        </section>
+
+        <aside class="inventory-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="panel-kicker">СНАРЯЖЕНИЕ</div>
+              <h2>Инвентарь</h2>
+            </div>
+            <span id="selected-item-label" class="selection-label">Ничего не выбрано</span>
+          </div>
+          <div id="inventory" class="inventory-grid"></div>
+          <div id="inventory-hint" class="inventory-hint">
+            Нажмите на предмет, чтобы выбрать цель. Можно также перетащить предмет на сцену.
+          </div>
+          <div id="debug-panel" class="debug-panel" hidden></div>
+        </aside>
+      </div>
+
+      <section class="journal-panel">
+        <div class="journal-header">
+          <span class="journal-title">Рассказчик</span>
+          <span id="journal-status" class="journal-status">Готово</span>
+        </div>
+        <div id="journal" class="journal" aria-live="polite"></div>
+      </section>
+
+      <div class="minimap">
+        <img src="assets/maps/minimap.png" alt="Мини-карта" id="minimap-image">
+        <div id="minimap-fallback" hidden>УБЕЖИЩЕ · РЫНОК · БУНКЕР</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="win-overlay" class="win-overlay" hidden>
+    <img src="assets/screens/win.png" alt="Победа">
+    <div class="win-overlay-content">
+      <div class="win-label">КОНЕЦ</div>
+      <h2>Бункер открыт</h2>
+      <p>Ты добрался до последней батареи.</p>
+      <button id="win-restart" class="ui-button" type="button">Начать заново</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
