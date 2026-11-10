@@ -233,6 +233,7 @@ const DOM = {
   scene: document.getElementById("scene"),
   sceneFallback: document.getElementById("scene-fallback"),
   sceneActionHint: document.getElementById("scene-action-hint"),
+  sceneTransition: document.getElementById("scene-transition"),
   locationName: document.getElementById("location-name"),
   locationDescription: document.getElementById("location-description"),
   inventory: document.getElementById("inventory"),
@@ -405,7 +406,9 @@ function dispatchAction(action) {
       addMessage("Неизвестное действие.");
   }
 
-  render();
+  if (action.type !== "MOVE") {
+    render();
+  }
   if (action.type !== "RESET_GAME") {
     saveGame(true);
   }
@@ -502,6 +505,24 @@ function addEntityToCurrentLocation(itemId) {
   if (!location.entities.includes(itemId)) {
     location.entities.push(itemId);
   }
+}
+
+function getSceneStateNote(entity) {
+  if (entity.id === "wounded" && state.flags.wounded_watered) {
+    return "Раненый уже получил воду.";
+  }
+
+  if (entity.id === "bunker_door") {
+    return state.flags.bunker_door_open
+      ? "Замок снят. Дверь открыта."
+      : "Замок требует код.";
+  }
+
+  if (entity.id === "lamp") {
+    return "Фонарь сломан и больше не пригоден.";
+  }
+
+  return "";
 }
 
 // ============================================================
@@ -679,6 +700,7 @@ function giveWaterToWounded() {
   state.selectedItem = null;
 
   addMessage("Раненый жадно пьёт и протягивает вам фильтр.");
+  flashEntity("wounded");
 }
 
 function openBunkerDoor() {
@@ -693,6 +715,7 @@ function openBunkerDoor() {
   state.selectedItem = null;
 
   addMessage("Код принят. Тяжёлая дверь открывается.");
+  flashEntity("bunker_door");
 }
 
 // ============================================================
@@ -727,15 +750,24 @@ function moveTo(locationId) {
     }
   }
 
-  state.location = locationId;
   state.selectedItem = null;
   clearSceneDialog();
 
-  if (locationId === "bunker") {
-    state.flags.game_won = true;
-    addMessage("Ты входишь в бункер. Здесь действительно есть работающая батарея.");
-    setTimeout(showWinScreen, 500);
-  }
+  const enterLocation = () => {
+    state.location = locationId;
+
+    if (locationId === "bunker") {
+      state.flags.game_won = true;
+      addMessage("Ты входишь в бункер. Здесь действительно есть работающая батарея.");
+      setTimeout(showWinScreen, 500);
+    }
+
+    render();
+  };
+
+  playSceneTransition(enterLocation);
+  return;
+
 }
 
 function shakeDoor() {
@@ -753,6 +785,35 @@ function shakeDoor() {
 // ============================================================
 // 10. РЕНДЕР
 // ============================================================
+
+function flashEntity(entityId) {
+  requestAnimationFrame(() => {
+    const entity = DOM.scene.querySelector('[data-entity-id="' + entityId + '"]');
+    if (!entity) {
+      return;
+    }
+
+    entity.classList.remove("state-changed");
+    void entity.offsetWidth;
+    entity.classList.add("state-changed");
+  });
+}
+
+function playSceneTransition(callback) {
+  if (!DOM.sceneTransition) {
+    callback();
+    return;
+  }
+
+  DOM.sceneTransition.classList.add("active");
+
+  setTimeout(() => {
+    callback();
+    requestAnimationFrame(() => {
+      DOM.sceneTransition.classList.remove("active");
+    });
+  }, 180);
+}
 
 function render() {
   renderScene();
@@ -912,7 +973,8 @@ function showSceneActionHint(entity) {
       : "Открыть: дверь в бункер";
   }
 
-  DOM.sceneActionHint.textContent = text;
+  const note = getSceneStateNote(entity);
+  DOM.sceneActionHint.textContent = note ? text + " · " + note : text;
   DOM.sceneActionHint.classList.add("visible");
 }
 
