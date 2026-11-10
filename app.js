@@ -232,6 +232,7 @@ const DOM = {
   sceneViewport: document.getElementById("scene-viewport"),
   scene: document.getElementById("scene"),
   sceneFallback: document.getElementById("scene-fallback"),
+  sceneActionHint: document.getElementById("scene-action-hint"),
   locationName: document.getElementById("location-name"),
   locationDescription: document.getElementById("location-description"),
   inventory: document.getElementById("inventory"),
@@ -810,6 +811,9 @@ function renderEntity(entity) {
   button.className = "scene-entity";
   button.dataset.entityId = entity.id;
   button.dataset.kind = entity.kind;
+  if (entity.atmosphereOnly) {
+    button.dataset.atmosphere = "true";
+  }
   button.style.left = entity.position.x + "px";
   button.style.top = entity.position.y + "px";
   button.style.width = entity.position.w + "px";
@@ -874,7 +878,48 @@ function renderEntity(entity) {
 
   attachEntityAction(button, entity);
 
+  button.addEventListener("mouseenter", () => showSceneActionHint(entity));
+  button.addEventListener("mouseleave", hideSceneActionHint);
+  button.addEventListener("focus", () => showSceneActionHint(entity));
+  button.addEventListener("blur", hideSceneActionHint);
+
   DOM.scene.appendChild(button);
+}
+
+function showSceneActionHint(entity) {
+  if (!DOM.sceneActionHint) {
+    return;
+  }
+
+  let text = entity.label;
+
+  if (state.selectedItem) {
+    const item = GAME_DATA.items[state.selectedItem];
+    text = item.usableTargets.includes(entity.id)
+      ? "Использовать: " + item.name
+      : "Здесь " + item.name.toLowerCase() + " не пригодится";
+  } else if (entity.kind === "item") {
+    text = entity.atmosphereOnly
+      ? "Осмотреть: " + entity.label
+      : "Взять: " + entity.label;
+  } else if (entity.kind === "npc") {
+    text = "Поговорить: " + entity.label;
+  } else if (entity.kind === "exit") {
+    text = "Перейти: " + entity.label;
+  } else if (entity.kind === "door") {
+    text = state.flags.bunker_door_open
+      ? "Войти: бункер"
+      : "Открыть: дверь в бункер";
+  }
+
+  DOM.sceneActionHint.textContent = text;
+  DOM.sceneActionHint.classList.add("visible");
+}
+
+function hideSceneActionHint() {
+  if (DOM.sceneActionHint) {
+    DOM.sceneActionHint.classList.remove("visible");
+  }
 }
 
 function attachEntityAction(button, entity) {
@@ -897,6 +942,11 @@ function attachEntityAction(button, entity) {
     }
 
     if (entity.kind === "item") {
+      if (entity.atmosphereOnly) {
+        addMessage(entity.label + ": " + GAME_DATA.items[entity.itemId].description);
+        return;
+      }
+
       dispatchAction({
         type: "TAKE_ITEM",
         itemId: entity.itemId
@@ -1072,6 +1122,7 @@ function renderInventory() {
     : "Нажмите на предмет, чтобы выбрать цель. Можно также перетащить предмет на сцену.";
 
   updateTargetHighlighting();
+  hideSceneActionHint();
 }
 
 function toggleSelectedItem(itemId) {
