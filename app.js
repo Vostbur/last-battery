@@ -36,9 +36,9 @@ const GAME_DATA = {
     bunker: {
       id: "bunker",
       name: "Бункер",
-      description: "Тяжёлая дверь позади, впереди — темнота; на юг — выход.",
+      description: "Тяжёлая дверь позади, впереди — тёмный зал с огромной машиной; на юг — выход.",
       background: "assets/locations/bunker.png",
-      entities: ["exit_south"]
+      entities: ["bunker_machine", "bunker_panel", "bunker_battery", "exit_south"]
     }
   },
 
@@ -167,6 +167,27 @@ const GAME_DATA = {
       label: "Дверь в бункер",
       spriteLocked: "assets/sprites/door_locked.png",
       spriteOpen: "assets/sprites/door_open.png"
+    },
+
+    bunker_machine: {
+      id: "bunker_machine",
+      kind: "inspect",
+      position: { x: 735, y: 205, w: 330, h: 260 },
+      label: "Старая машина"
+    },
+
+    bunker_panel: {
+      id: "bunker_panel",
+      kind: "inspect",
+      position: { x: 845, y: 430, w: 150, h: 110 },
+      label: "Панель управления"
+    },
+
+    bunker_battery: {
+      id: "bunker_battery",
+      kind: "inspect",
+      position: { x: 505, y: 350, w: 180, h: 180 },
+      label: "Последняя батарея"
     }
   },
 
@@ -207,6 +228,8 @@ const INITIAL_STATE = {
   flags: {
     wounded_watered: false,
     bunker_door_open: false,
+    bunker_machine_inspected: false,
+    bunker_panel_inspected: false,
     game_won: false
   },
 
@@ -534,6 +557,24 @@ function getSceneStateNote(entity) {
       : "Замок требует код.";
   }
 
+  if (entity.id === "bunker_machine") {
+    return state.flags.bunker_machine_inspected
+      ? "Машина отвечает слабым гулом."
+      : "Внутри ещё есть питание.";
+  }
+
+  if (entity.id === "bunker_panel") {
+    return state.flags.bunker_panel_inspected
+      ? "На панели горит один зелёный индикатор."
+      : "Панель обесточена.";
+  }
+
+  if (entity.id === "bunker_battery") {
+    return state.flags.game_won
+      ? "Батарея работает. Последняя."
+      : "Корпус цел. Похоже, она всё ещё жива.";
+  }
+
   if (entity.id === "lamp") {
     return "Фонарь сломан и больше не пригоден.";
   }
@@ -757,6 +798,70 @@ function giveWaterToWounded() {
   flashEntity("wounded");
 }
 
+function inspectBunkerEntity(entityId) {
+  if (state.location !== "bunker") {
+    return;
+  }
+
+  if (entityId === "bunker_machine") {
+    if (!state.flags.bunker_machine_inspected) {
+      state.flags.bunker_machine_inspected = true;
+      unlockMilestone(
+        "inspected_machine",
+        "Машина не мёртвая. Под панелями проходит слабый ток, а где-то внутри работает старый преобразователь."
+      );
+    } else {
+      addMessage("Гул становится чуть громче. Машина ждёт запуска.");
+    }
+    render();
+    return;
+  }
+
+  if (entityId === "bunker_panel") {
+    if (!state.flags.bunker_machine_inspected) {
+      addMessage("Панель слишком тёмная. Сначала стоит осмотреть машину.");
+      return;
+    }
+
+    if (!state.flags.bunker_panel_inspected) {
+      state.flags.bunker_panel_inspected = true;
+      unlockMilestone(
+        "inspected_panel",
+        "Под слоем пыли находится механический переключатель. Один контакт всё ещё держит питание."
+      );
+    } else {
+      addMessage("Переключатель уже поднят. Зелёный индикатор больше не мигает.");
+    }
+    render();
+    return;
+  }
+
+  if (entityId === "bunker_battery") {
+    if (!state.flags.bunker_machine_inspected) {
+      addMessage("В темноте виден только массивный корпус. Сначала осмотри машину.");
+      return;
+    }
+
+    if (!state.flags.bunker_panel_inspected) {
+      addMessage("Батарея подключена к системе, но цепь не активна. Нужна панель.");
+      return;
+    }
+
+    if (!state.flags.game_won) {
+      state.flags.game_won = true;
+      unlockMilestone(
+        "found_battery",
+        "Зелёный индикатор загорается ровно. Последняя батарея всё ещё работает."
+      );
+      addMessage("Ты находишь источник питания. Последняя батарея не сдалась.");
+      render();
+      setTimeout(showWinScreen, 500);
+    } else {
+      addMessage("Батарея работает. Ты действительно нашёл последнюю.");
+    }
+  }
+}
+
 function openBunkerDoor() {
   if (state.flags.bunker_door_open) {
     addMessage("Дверь уже открыта.");
@@ -815,13 +920,11 @@ function moveTo(locationId) {
     state.location = locationId;
 
     if (locationId === "bunker") {
-      state.flags.game_won = true;
       unlockMilestone(
         "entered_bunker",
-        "Дверь закрывается за спиной. В темноте постепенно проступает огромная машина. На панели ещё горит один зелёный индикатор."
+        "Дверь закрывается за спиной. В темноте постепенно проступает огромная машина. На панели едва заметно мигает один зелёный индикатор."
       );
       addMessage("Ты входишь в бункер. Здесь действительно есть работающая батарея.");
-      setTimeout(showWinScreen, 700);
     }
 
     render();
@@ -1041,6 +1144,8 @@ function showSceneActionHint(entity) {
     text = state.flags.bunker_door_open
       ? "Войти: бункер"
       : "Открыть: дверь в бункер";
+  } else if (entity.kind === "inspect") {
+    text = "Осмотреть: " + entity.label;
   }
 
   const note = getSceneStateNote(entity);
@@ -1083,6 +1188,11 @@ function attachEntityAction(button, entity) {
         type: "TAKE_ITEM",
         itemId: entity.itemId
       });
+      return;
+    }
+
+    if (entity.kind === "inspect") {
+      inspectBunkerEntity(entity.id);
       return;
     }
 
@@ -1357,9 +1467,15 @@ function updateLocationText() {
   }
 
   if (state.location === "bunker") {
-    description = state.flags.game_won
-      ? "Тяжёлая дверь закрылась. В темноте работает машина, которой здесь не должно было быть."
-      : location.description;
+    if (state.flags.game_won) {
+      description = "Тяжёлая дверь закрылась. Машина работает, а последняя батарея даёт ровный зелёный свет.";
+    } else if (state.flags.bunker_panel_inspected) {
+      description = "Переключатель поднят. В глубине зала уже слышно ровное гудение.";
+    } else if (state.flags.bunker_machine_inspected) {
+      description = "Машина жива. На панели управления есть старый механический переключатель.";
+    } else {
+      description = location.description;
+    }
   }
 
   DOM.locationDescription.textContent = description;
@@ -1370,6 +1486,12 @@ function updateObjective() {
 
   if (state.flags.game_won) {
     objective = "Бункер найден. Батарея у тебя перед глазами.";
+  } else if (state.location === "bunker" && !state.flags.bunker_machine_inspected) {
+    objective = "Осмотри машину в глубине бункера.";
+  } else if (state.location === "bunker" && !state.flags.bunker_panel_inspected) {
+    objective = "Найди на панели способ запустить систему.";
+  } else if (state.location === "bunker") {
+    objective = "Осмотри батарею.";
   } else if (state.flags.bunker_door_open) {
     objective = "Войди в открытый бункер.";
   } else if (hasItem("code")) {
@@ -1409,6 +1531,8 @@ function renderDebug() {
     "wounded_watered: " + state.flags.wounded_watered,
     "bunker_door_open: " + state.flags.bunker_door_open,
     "game_won: " + state.flags.game_won,
+    "machine_inspected: " + state.flags.bunker_machine_inspected,
+    "panel_inspected: " + state.flags.bunker_panel_inspected,
     "milestones: " + (state.milestones.join(", ") || "none"),
     "selected: " + (state.selectedItem || "none"),
     "last action: " + state.lastAction,
