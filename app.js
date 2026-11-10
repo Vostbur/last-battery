@@ -66,10 +66,10 @@ const GAME_DATA = {
     lamp: {
       id: "lamp",
       name: "Сломанный фонарь",
-      description: "Старый фонарь. Он не работает.",
+      description: "Старый фонарь. Он не работает, но его можно забрать с собой.",
       icon: "assets/items/lamp.png",
-      canTake: false,
-      canDrop: false,
+      canTake: true,
+      canDrop: true,
       usableTargets: []
     },
 
@@ -106,8 +106,7 @@ const GAME_DATA = {
       kind: "item",
       itemId: "lamp",
       position: { x: 960, y: 580, w: 60, h: 60 },
-      label: "Фонарь",
-      atmosphereOnly: true
+      label: "Фонарь"
     },
 
     wounded: {
