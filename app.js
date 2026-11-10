@@ -545,6 +545,29 @@ function openNpcDialog(npcId) {
   renderNpcTopics(npcId);
 }
 
+function getNpcSubtitle(npcId) {
+  if (npcId === "wounded") {
+    if (state.flags.wounded_watered) {
+      return "Он выглядит лучше. Взгляд уже не такой мутный.";
+    }
+    return hasItem("flask")
+      ? "Он заметил вашу флягу."
+      : "Он тяжело дышит и держится за бок.";
+  }
+
+  if (npcId === "trader") {
+    if (hasItem("code")) {
+      return "Сделка завершена. Торговец больше ничего не предлагает.";
+    }
+    if (hasItem("filter", 2)) {
+      return "Два фильтра — достаточная цена за его услугу.";
+    }
+    return "Он следит за каждым предметом на вашем поясе.";
+  }
+
+  return "О чём спросить?";
+}
+
 function renderNpcTopics(npcId) {
   const npc = GAME_DATA.npcs[npcId];
 
@@ -563,7 +586,7 @@ function renderNpcTopics(npcId) {
 
   const subtitle = document.createElement("div");
   subtitle.className = "npc-dialog-subtitle";
-  subtitle.textContent = "О чём спросить?";
+  subtitle.textContent = getNpcSubtitle(npcId);
 
   const topics = document.createElement("div");
   topics.className = "npc-dialog-topics";
@@ -629,26 +652,33 @@ function handleNpcTopic(npcId, topicId) {
       if (state.flags.wounded_watered) {
         addMessage("Раненый кивает: «Я уже отдал тебе фильтр».");
       } else {
-        addMessage("Раненый: «У меня есть один, но мне нужна вода».");
+        addMessage(hasItem("flask")
+          ? "Раненый: «Вода... пожалуйста. Тогда отдам тебе фильтр»."
+          : "Раненый: «У меня есть один фильтр, но сначала нужна вода».");
       }
       return;
     }
 
     if (topicId === "code") {
-      addMessage("Раненый: «Торговец знает. Спроси у него».");
+      addMessage(state.flags.wounded_watered
+        ? "Раненый: «Торговец знает про старый бункер. Два фильтра — его цена»."
+        : "Раненый: «Торговец знает. Спроси у него».");
       return;
     }
   }
 
   if (npcId === "trader" && topicId === "code") {
     if (!hasItem("filter", 2)) {
-      addMessage("Торговец: «Принеси два фильтра — и код твой».");
+      addMessage(hasItem("filter", 1)
+        ? "Торговец: «Одного мало. Мне нужны два фильтра, тогда дам код»."
+        : "Торговец: «Принеси два фильтра — и код твой».");
       return;
     }
 
     removeInventory("filter", 2);
     addInventory("code", 1);
     addMessage("Торговец забирает оба фильтра. «Держи. Не потеряй».");
+    addMessage("Код тяжёлый и тёплый от его ладони. Похоже, его давно не использовали.");
     return;
   }
 
@@ -874,6 +904,14 @@ function renderEntity(entity) {
   button.dataset.kind = entity.kind;
   if (entity.atmosphereOnly) {
     button.dataset.atmosphere = "true";
+  }
+
+  if (entity.id === "wounded" && state.flags.wounded_watered) {
+    button.dataset.state = "helped";
+  }
+
+  if (entity.id === "bunker_door" && state.flags.bunker_door_open) {
+    button.dataset.state = "open";
   }
   button.style.left = entity.position.x + "px";
   button.style.top = entity.position.y + "px";
@@ -1390,11 +1428,17 @@ function loadGame() {
 
     state = restored;
     restoreLocationEntities();
-    hideWinScreen();
     clearSceneDialog();
     addMessage("Сохранение загружено.");
     render();
     updateStartScreen();
+
+    if (state.flags.game_won) {
+      setTimeout(showWinScreen, 250);
+    } else {
+      hideWinScreen();
+    }
+
     return true;
   } catch (error) {
     localStorage.removeItem(SAVE_KEY);
