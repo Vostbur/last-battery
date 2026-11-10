@@ -904,3 +904,28 @@ h2 {
 .scene-entity[data-kind="door"][data-state="open"] {
   filter: drop-shadow(0 0 12px rgba(201, 162, 39, 0.42));
 }
+
+/* NPC sprites are illustrations with a light/white matte around the figure.
+   Multiply removes the white matte against the scene while preserving the figure. */
+.scene-entity[data-kind="npc"] img {
+  mix-blend-mode: multiply;
+}
+
+/* NPCs are intentionally larger than inventory/exit sprites. */
+.scene-entity[data-kind="npc"] {
+  z-index: 12;
+}
+
+.scene-entity[data-kind="npc"] img {
+  object-fit: contain;
+}
+
+.scene-entity.hotspot-only {
+  z-index: 20;
+  opacity: 0 !important;
+  filter: none !important;
+}
+
+.scene-entity.hotspot-only .entity-label {
+  display: none;
+}
