@@ -1825,8 +1825,7 @@ function restoreLocationEntities() {
     "trader",
     "lamp",
     "exit_west",
-    "bunker_door",
-    "exit_north"
+    "bunker_door"
   ];
 
   // Фильтр на рынке — отдельный предмет от фильтра, который получает
