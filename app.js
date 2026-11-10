@@ -30,7 +30,7 @@ const GAME_DATA = {
       name: "Рынок",
       description: "Ржавые контейнеры, у стены раненый, за прилавком торговец, на земле фильтр и сломанный фонарь; на запад — обратно в убежище, на север — тяжёлая дверь с кодовым замком.",
       background: "assets/locations/market.png",
-      entities: ["wounded", "trader", "filter", "lamp", "exit_west", "bunker_door", "exit_north"]
+      entities: ["wounded", "trader", "filter", "lamp", "exit_west", "bunker_door"]
     },
 
     bunker: {
@@ -113,14 +113,14 @@ const GAME_DATA = {
     wounded: {
       id: "wounded",
       kind: "npc",
-      position: { x: 110, y: 300, w: 360, h: 360 },
+      position: { x: 135, y: 345, w: 255, h: 300 },
       label: "Раненый"
     },
 
     trader: {
       id: "trader",
       kind: "npc",
-      position: { x: 700, y: 285, w: 360, h: 360 },
+      position: { x: 650, y: 250, w: 255, h: 320 },
       label: "Торговец"
     },
 
@@ -163,8 +163,9 @@ const GAME_DATA = {
     bunker_door: {
       id: "bunker_door",
       kind: "door",
-      position: { x: 500, y: 105, w: 200, h: 255 },
+      position: { x: 365, y: 185, w: 205, h: 320 },
       label: "Дверь в бункер",
+      hotspotOnly: true,
       spriteLocked: "assets/sprites/door_locked.png",
       spriteOpen: "assets/sprites/door_open.png"
     },
