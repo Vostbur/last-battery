@@ -208,7 +208,8 @@ const GAME_DATA = {
       name: "Торговец",
       sprite: "assets/sprites/trader.png",
       topics: [
-        { id: "code", label: "Спросить про код" }
+        { id: "code", label: "Спросить про код" },
+        { id: "battery", label: "Спросить про батарею" }
       ]
     }
   }
@@ -724,6 +725,24 @@ function handleNpcTopic(npcId, topicId) {
     }
   }
 
+  if (npcId === "trader" && topicId === "battery") {
+    if (!state.flags.bunker_door_open && !hasItem("code")) {
+      addMessage("Торговец: «О батарее? Сначала доберись до бункера. Здесь такие вещи не обсуждают вслух».");
+      return;
+    }
+
+    addMessage(
+      state.flags.game_won
+        ? "Торговец: «Значит, ты всё-таки нашёл её. Я думал, система умерла много лет назад»."
+        : "Торговец: «Если внутри ещё есть зелёный свет — не спеши трогать батарею. Сначала проверь машину и панель»."
+    );
+    unlockMilestone(
+      "heard_battery_hint",
+      "Торговец предупреждает: в бункере сначала нужно проверить машину и панель, а уже потом трогать батарею."
+    );
+    return;
+  }
+
   if (npcId === "trader" && topicId === "code") {
     if (!hasItem("filter", 2)) {
       addMessage(hasItem("filter", 1)
@@ -1181,6 +1200,14 @@ function attachEntityAction(button, entity) {
     if (entity.kind === "item") {
       if (entity.atmosphereOnly) {
         addMessage(entity.label + ": " + GAME_DATA.items[entity.itemId].description);
+
+        if (entity.id === "lamp" && !state.milestones.includes("inspected_lamp")) {
+          unlockMilestone(
+            "inspected_lamp",
+            "Под фонарём выцарапана стрелка на север. Кто-то хотел, чтобы дорогу к бункеру не забыли."
+          );
+        }
+
         return;
       }
 
