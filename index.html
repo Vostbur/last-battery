@@ -15,6 +15,8 @@
           <h1>Последняя батарея</h1>
         </div>
         <div class="topbar-actions">
+          <button id="save-button" class="ui-button subtle" type="button">Сохранить</button>
+          <button id="load-button" class="ui-button subtle" type="button">Загрузить</button>
           <button id="debug-toggle" class="ui-button subtle" type="button">DEBUG: ВЫКЛ</button>
           <button id="restart-button" class="ui-button" type="button">Начать заново</button>
         </div>
@@ -62,6 +64,19 @@
       </div>
     </section>
   </main>
+
+  <div id="start-overlay" class="start-overlay">
+    <div class="start-card">
+      <div class="win-label">ПОСТАПОКАЛИПСИС · 01</div>
+      <h2>Последняя батарея</h2>
+      <p>Вода, два фильтра, один код. Найди путь в бункер.</p>
+      <div class="start-actions">
+        <button id="start-new" class="ui-button" type="button">Новая игра</button>
+        <button id="start-continue" class="ui-button subtle" type="button">Продолжить</button>
+      </div>
+      <div id="start-save-status" class="start-save-status"></div>
+    </div>
+  </div>
 
   <div id="win-overlay" class="win-overlay" hidden>
     <img src="assets/screens/win.png" alt="Победа">
