@@ -1766,17 +1766,38 @@ function resetGame() {
 }
 
 function restoreLocationEntities() {
-  GAME_DATA.locations.shelter.entities = ["flask", "exit_east"];
+  // Восстанавливаем только те предметы, которые действительно должны
+  // находиться в мире после загрузки. Состояние сцены теперь зависит
+  // от инвентаря и пройденных этапов, а не сбрасывается целиком.
+  GAME_DATA.locations.shelter.entities = ["exit_east"];
+
+  if (!hasItem("flask") && !state.milestones.includes("found_flask")) {
+    GAME_DATA.locations.shelter.entities.unshift("flask");
+  }
+
   GAME_DATA.locations.market.entities = [
     "wounded",
     "trader",
-    "filter",
     "lamp",
     "exit_west",
     "bunker_door",
     "exit_north"
   ];
-  GAME_DATA.locations.bunker.entities = ["exit_south"];
+
+  // Фильтр на рынке — отдельный предмет от фильтра, который получает
+  // раненый. Поэтому его исчезновение фиксируем отдельной вехой.
+  if (!state.milestones.includes("found_market_filter")) {
+    GAME_DATA.locations.market.entities.splice(2, 0, "filter");
+  }
+
+  // Финальные объекты бункера являются частью постоянной сцены и не
+  // должны исчезать после загрузки сохранения.
+  GAME_DATA.locations.bunker.entities = [
+    "bunker_machine",
+    "bunker_panel",
+    "bunker_battery",
+    "exit_south"
+  ];
 }
 
 // ============================================================
