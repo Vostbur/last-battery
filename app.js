@@ -1214,7 +1214,7 @@ function renderEntity(entity) {
       image.style.mixBlendMode = "multiply";
     }
     button.appendChild(image);
-  } else if (!entity.hotspotOnly) {
+  } else if (!entity.hotspotOnly && entity.kind !== "inspect") {
     button.appendChild(createInlineSvgFallback(entity));
     state.fallbackLevel = Math.max(state.fallbackLevel, 1);
   }
