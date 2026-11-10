@@ -692,3 +692,78 @@ h2 {
 .scene-entity[data-kind="exit"]:hover img {
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.46));
 }
+
+
+/* --- start screen / persistence --- */
+.ui-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.start-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, rgba(111, 143, 106, 0.08), transparent 42%),
+    rgba(13, 11, 8, 0.94);
+  animation: fadeIn 450ms ease both;
+}
+
+.start-overlay[hidden] {
+  display: none;
+}
+
+.start-card {
+  width: min(520px, 90vw);
+  padding: 34px;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  background: rgba(13, 11, 8, 0.9);
+  box-shadow: 0 24px 100px rgba(0, 0, 0, 0.7);
+  text-align: center;
+}
+
+.start-card h2 {
+  margin-top: 10px;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 500;
+}
+
+.start-card p {
+  margin: 12px auto 24px;
+  max-width: 380px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.start-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.start-actions .ui-button {
+  min-width: 150px;
+}
+
+.start-save-status {
+  min-height: 16px;
+  margin-top: 14px;
+  color: var(--muted);
+  font: 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 650px) {
+  .start-actions {
+    flex-direction: column;
+  }
+
+  .start-actions .ui-button {
+    width: 100%;
+  }
+}
