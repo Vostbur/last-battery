@@ -672,3 +672,23 @@ h2 {
     display: none;
   }
 }
+
+/* --- polish: scene interaction --- */
+.scene-entity {
+  transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
+}
+.scene-entity.interactive:hover {
+  transform: translateY(-2px);
+}
+.scene-entity[data-kind="item"] img,
+.scene-entity[data-kind="npc"] img,
+.scene-entity[data-kind="door"] img,
+.scene-entity[data-kind="exit"] img {
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.34));
+}
+.scene-entity[data-kind="item"]:hover img,
+.scene-entity[data-kind="npc"]:hover img,
+.scene-entity[data-kind="door"]:hover img,
+.scene-entity[data-kind="exit"]:hover img {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.46));
+}
