@@ -30,7 +30,7 @@ const GAME_DATA = {
       name: "Рынок",
       description: "Ржавые контейнеры, у стены раненый, за прилавком торговец, на земле фильтр и сломанный фонарь; на запад — обратно в убежище, на север — тяжёлая дверь с кодовым замком.",
       background: "assets/locations/market.png",
-      entities: ["wounded", "trader", "filter", "lamp", "exit_west", "bunker_door"]
+      entities: ["wounded", "trader", "filter", "lamp", "exit_west", "bunker_door", "exit_north"]
     },
 
     bunker: {
@@ -131,6 +131,15 @@ const GAME_DATA = {
       position: { x: 1160, y: 340, w: 200, h: 280 },
       label: "На восток → Рынок",
       sprite: "assets/sprites/exit_east.png"
+    },
+
+    exit_north: {
+      id: "exit_north",
+      kind: "exit",
+      target: "bunker",
+      position: { x: 555, y: 40, w: 170, h: 80 },
+      label: "На север → Бункер",
+      sprite: "assets/sprites/exit_north.png"
     },
 
     exit_west: {
@@ -828,9 +837,16 @@ function attachEntityAction(button, entity) {
     }
 
     if (entity.kind === "door") {
-      dispatchAction({
-        type: "OPEN_DOOR"
-      });
+      if (state.flags.bunker_door_open) {
+        dispatchAction({
+          type: "MOVE",
+          locationId: "bunker"
+        });
+      } else {
+        dispatchAction({
+          type: "OPEN_DOOR"
+        });
+      }
     }
   });
 }
@@ -1113,7 +1129,8 @@ function restoreLocationEntities() {
     "filter",
     "lamp",
     "exit_west",
-    "bunker_door"
+    "bunker_door",
+    "exit_north"
   ];
   GAME_DATA.locations.bunker.entities = ["exit_south"];
 }
