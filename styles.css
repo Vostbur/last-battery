@@ -839,3 +839,27 @@ h2 {
 .scene-entity[data-kind="item"][data-atmosphere="true"]:hover {
   opacity: 1;
 }
+
+
+.scene-transition {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background: #0d0b08;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.scene-transition.active {
+  opacity: 1;
+}
+
+.scene-entity.state-changed {
+  animation: stateChanged 420ms ease;
+}
+
+@keyframes stateChanged {
+  0% { transform: translateY(-2px) scale(1.03); filter: drop-shadow(0 0 18px rgba(201, 162, 39, 0.75)); }
+  100% { transform: translateY(0) scale(1); }
+}
