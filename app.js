@@ -211,6 +211,7 @@ const INITIAL_STATE = {
   },
 
   selectedItem: null,
+  dialogNpc: null,
   messages: [],
   debug: false,
   lastAction: "Игра начата",
@@ -264,6 +265,7 @@ function init() {
   setupAssetFallbacks();
   resizeScene();
   window.addEventListener("resize", resizeScene);
+  window.addEventListener("keydown", handleKeyboardShortcuts);
 
   addMessage("Ты приходишь в себя в убежище. Если верить слухам, в бункере ещё есть батарея.");
   render();
@@ -317,6 +319,32 @@ function bindGlobalEvents() {
       });
     }
   });
+}
+
+function handleKeyboardShortcuts(event) {
+  if (event.key === "Escape") {
+    if (state.dialogNpc) {
+      clearSceneDialog();
+      render();
+      return;
+    }
+
+    if (state.selectedItem) {
+      state.selectedItem = null;
+      render();
+      return;
+    }
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    saveGame();
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
+    event.preventDefault();
+    loadGame();
+  }
 }
 
 function setupAssetFallbacks() {
@@ -487,6 +515,7 @@ function openNpcDialog(npcId) {
   }
 
   state.selectedItem = null;
+  state.dialogNpc = npcId;
 
   // Вместо отдельного модального окна используем компактное меню тем
   // прямо поверх сцены.
@@ -496,7 +525,10 @@ function openNpcDialog(npcId) {
 function renderNpcTopics(npcId) {
   const npc = GAME_DATA.npcs[npcId];
 
-  clearSceneDialog();
+  const existing = DOM.scene.querySelector(".npc-dialog");
+  if (existing) {
+    existing.remove();
+  }
 
   const dialog = document.createElement("div");
   dialog.className = "npc-dialog";
@@ -541,6 +573,7 @@ function renderNpcTopics(npcId) {
 }
 
 function clearSceneDialog() {
+  state.dialogNpc = null;
   const existing = DOM.scene.querySelector(".npc-dialog");
   if (existing) {
     existing.remove();
@@ -743,6 +776,10 @@ function renderScene() {
 
     renderEntity(entity);
   });
+
+  if (state.dialogNpc && location.entities.includes(state.dialogNpc)) {
+    renderNpcTopics(state.dialogNpc);
+  }
 
   // Если фон не успел загрузиться, fallback переключится обработчиком error.
   // Для file:// это работает так же, как при обычном HTTP.
