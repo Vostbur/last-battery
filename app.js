@@ -89,7 +89,7 @@ const GAME_DATA = {
       id: "flask",
       kind: "item",
       itemId: "flask",
-      position: { x: 560, y: 540, w: 56, h: 56 },
+      position: { x: 535, y: 500, w: 110, h: 110 },
       label: "Фляга"
     },
 
@@ -128,9 +128,9 @@ const GAME_DATA = {
       id: "exit_east",
       kind: "exit",
       target: "market",
-      position: { x: 1160, y: 340, w: 200, h: 280 },
-      label: "На восток → Рынок",
-      sprite: "assets/sprites/exit_east.png"
+      position: { x: 825, y: 90, w: 235, h: 470 },
+      label: "Выйти через дверь → Рынок",
+      hotspotOnly: true
     },
 
     exit_north: {
@@ -1190,6 +1190,15 @@ function renderEntity(entity) {
     button.classList.add("interactive");
   }
 
+  if (entity.hotspotOnly) {
+    button.classList.add("hotspot-only");
+    button.style.opacity = "0";
+  }
+
+  if (entity.id === "flask") {
+    button.classList.add("flask-entity");
+  }
+
   if (sprite) {
     const image = document.createElement("img");
     image.src = sprite;
@@ -1200,8 +1209,11 @@ function renderEntity(entity) {
       renderDebug();
     }, { once: true });
 
+    if (entity.id === "flask") {
+      image.style.mixBlendMode = "multiply";
+    }
     button.appendChild(image);
-  } else {
+  } else if (!entity.hotspotOnly) {
     button.appendChild(createInlineSvgFallback(entity));
     state.fallbackLevel = Math.max(state.fallbackLevel, 1);
   }
