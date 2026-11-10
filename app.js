@@ -605,6 +605,12 @@ function openNpcDialog(npcId) {
 
 function getNpcSubtitle(npcId) {
   if (npcId === "wounded") {
+    if (state.flags.game_won) {
+      return "Он улыбается: теперь у поселения снова есть шанс.";
+    }
+    if (hasItem("code") || state.flags.bunker_door_open) {
+      return "Он понимает, что ты добрался до старой двери.";
+    }
     if (state.flags.wounded_watered) {
       return "Он выглядит лучше. Взгляд уже не такой мутный.";
     }
@@ -614,6 +620,12 @@ function getNpcSubtitle(npcId) {
   }
 
   if (npcId === "trader") {
+    if (state.flags.game_won) {
+      return "Он впервые выглядит по-настоящему спокойным.";
+    }
+    if (state.flags.bunker_door_open) {
+      return "Северная дверь открыта. Он прислушивается к гулу из бункера.";
+    }
     if (hasItem("code")) {
       return "Сделка завершена. Торговец больше ничего не предлагает.";
     }
@@ -936,7 +948,44 @@ function moveTo(locationId) {
   clearSceneDialog();
 
   const enterLocation = () => {
+    const previousLocation = state.location;
     state.location = locationId;
+
+    if (
+      locationId === "market" &&
+      previousLocation !== "market" &&
+      state.flags.wounded_watered &&
+      !state.milestones.includes("returned_to_market_after_help")
+    ) {
+      unlockMilestone(
+        "returned_to_market_after_help",
+        "Когда ты возвращаешься на рынок, раненый уже сидит ровнее. Он заметил, что ты не ушёл, и теперь смотрит на тебя иначе."
+      );
+    }
+
+    if (
+      locationId === "market" &&
+      previousLocation !== "market" &&
+      state.flags.bunker_door_open &&
+      !state.milestones.includes("returned_to_market_after_code")
+    ) {
+      unlockMilestone(
+        "returned_to_market_after_code",
+        "После открытия двери рынок кажется тише. Торговец время от времени смотрит на север, будто ждёт ответа из-под земли."
+      );
+    }
+
+    if (
+      locationId === "shelter" &&
+      previousLocation !== "shelter" &&
+      state.flags.wounded_watered &&
+      !state.milestones.includes("returned_to_shelter_after_help")
+    ) {
+      unlockMilestone(
+        "returned_to_shelter_after_help",
+        "В убежище всё по-прежнему пусто, но теперь тишина ощущается иначе: ты знаешь, что на рынке кому-то стало легче."
+      );
+    }
 
     if (locationId === "bunker") {
       unlockMilestone(
@@ -1491,6 +1540,10 @@ function updateLocationText() {
 
   if (state.location === "market" && state.flags.bunker_door_open) {
     description = "Ржавые контейнеры остаются позади. Северная дверь открыта, и из проёма тянет холодом.";
+  }
+
+  if (state.location === "market" && state.flags.game_won) {
+    description = "Рынок почти не изменился, но люди уже знают: в старом бункере снова работает машина. В воздухе впервые за долгое время есть ожидание.";
   }
 
   if (state.location === "bunker") {
