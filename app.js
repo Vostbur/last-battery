@@ -68,8 +68,8 @@ const GAME_DATA = {
       name: "Сломанный фонарь",
       description: "Старый фонарь. Он не работает.",
       icon: "assets/items/lamp.png",
-      canTake: true,
-      canDrop: true,
+      canTake: false,
+      canDrop: false,
       usableTargets: []
     },
 
