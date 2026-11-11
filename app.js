@@ -174,7 +174,7 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 735, y: 205, w: 330, h: 260 },
       label: "Старая машина",
-      sprite: "assets/sprites/bunker_machine.webp"
+      sprite: "assets/sprites/bunker_machine.svg"
     },
 
     bunker_panel: {
@@ -182,7 +182,7 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 845, y: 430, w: 150, h: 110 },
       label: "Панель управления",
-      sprite: "assets/sprites/bunker_panel.webp"
+      sprite: "assets/sprites/bunker_panel.svg"
     },
 
     bunker_battery: {
@@ -190,7 +190,7 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 505, y: 350, w: 180, h: 180 },
       label: "Последняя батарея",
-      sprite: "assets/sprites/bunker_battery.webp"
+      sprite: "assets/sprites/bunker_battery.svg"
     }
   },
 
