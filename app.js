@@ -2207,7 +2207,8 @@ function restoreLocationEntities() {
   if (
     state.flags.cabinet_open &&
     !state.milestones.includes("found_radio_coil") &&
-    !hasItem("radio_coil")
+    !hasItem("radio_coil") &&
+    !(state.droppedItems.comms?.radio_coil > 0)
   ) {
     GAME_DATA.locations.comms.entities.push("radio_coil");
   }
