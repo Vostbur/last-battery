@@ -174,7 +174,8 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 735, y: 205, w: 330, h: 260 },
       label: "Старая машина",
-      sprite: "assets/sprites/bunker_machine.svg"
+      sprite: "assets/sprites/bunker_machine.webp",
+      spriteFallback: "assets/sprites/bunker_machine.png"
     },
 
     bunker_panel: {
@@ -182,7 +183,8 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 845, y: 430, w: 150, h: 110 },
       label: "Панель управления",
-      sprite: "assets/sprites/bunker_panel.svg"
+      sprite: "assets/sprites/bunker_panel.webp",
+      spriteFallback: "assets/sprites/bunker_panel.png"
     },
 
     bunker_battery: {
@@ -190,7 +192,8 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 505, y: 350, w: 180, h: 180 },
       label: "Последняя батарея",
-      sprite: "assets/sprites/bunker_battery.svg"
+      sprite: "assets/sprites/bunker_battery.webp",
+      spriteFallback: "assets/sprites/bunker_battery.png"
     }
   },
 
@@ -1262,6 +1265,10 @@ function renderEntity(entity) {
     image.src = sprite;
     image.alt = entity.label;
     image.addEventListener("error", () => {
+      if (entity.spriteFallback && image.src.endsWith(entity.sprite.split("/").pop())) {
+        image.src = entity.spriteFallback;
+        return;
+      }
       image.replaceWith(createInlineSvgFallback(entity));
       state.fallbackLevel = Math.max(state.fallbackLevel, 1);
       renderDebug();
@@ -1276,10 +1283,14 @@ function renderEntity(entity) {
     state.fallbackLevel = Math.max(state.fallbackLevel, 1);
   }
 
-  const label = document.createElement("span");
-  label.className = "entity-label";
-  label.textContent = entity.label;
-  button.appendChild(label);
+  if (!entity.sprite || entity.kind !== "inspect") {
+    const label = document.createElement("span");
+    label.className = "entity-label";
+    label.textContent = entity.label;
+    button.appendChild(label);
+  } else {
+    button.setAttribute("aria-label", entity.label);
+  }
 
   attachEntityAction(button, entity);
 
