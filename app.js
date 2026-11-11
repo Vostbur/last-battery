@@ -173,21 +173,24 @@ const GAME_DATA = {
       id: "bunker_machine",
       kind: "inspect",
       position: { x: 735, y: 205, w: 330, h: 260 },
-      label: "Старая машина"
+      label: "Старая машина",
+      sprite: "assets/sprites/bunker_machine.svg"
     },
 
     bunker_panel: {
       id: "bunker_panel",
       kind: "inspect",
       position: { x: 845, y: 430, w: 150, h: 110 },
-      label: "Панель управления"
+      label: "Панель управления",
+      sprite: "assets/sprites/bunker_panel.svg"
     },
 
     bunker_battery: {
       id: "bunker_battery",
       kind: "inspect",
       position: { x: 505, y: 350, w: 180, h: 180 },
-      label: "Последняя батарея"
+      label: "Последняя батарея",
+      sprite: "assets/sprites/bunker_battery.svg"
     }
   },
 
