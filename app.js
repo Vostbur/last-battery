@@ -174,7 +174,7 @@ const GAME_DATA = {
       kind: "inspect",
       position: { x: 735, y: 205, w: 330, h: 260 },
       label: "Старая машина",
-      sprite: "assets/sprites/bunker_machine.svg"
+      sprite: "assets/sprites/bunker_machine.webp"
     },
 
     bunker_panel: {
