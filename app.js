@@ -215,9 +215,9 @@ const GAME_DATA = {
       id: "bunker_comms_exit",
       kind: "exit",
       target: "comms",
-      position: { x: 1020, y: 150, w: 180, h: 300 },
-      label: "Войти в старый узел связи",
-      hotspotOnly: true
+      position: { x: 1000, y: 165, w: 150, h: 300 },
+      label: "Проход в узел связи",
+      passage: true
     },
 
     radio_operator: {
@@ -264,9 +264,9 @@ const GAME_DATA = {
       id: "exit_comms_bunker",
       kind: "exit",
       target: "bunker",
-      position: { x: 0, y: 120, w: 170, h: 520 },
-      label: "Вернуться в бункер",
-      hotspotOnly: true
+      position: { x: 0, y: 150, w: 155, h: 360 },
+      label: "Проход обратно в бункер",
+      passage: true
     }
   },
 
@@ -1414,6 +1414,10 @@ function renderScene() {
       return;
     }
 
+    if (entity.id === "bunker_comms_exit" && !state.flags.battery_activated) {
+      return;
+    }
+
     renderEntity(entity);
   });
 
@@ -1485,6 +1489,9 @@ function renderEntity(entity) {
 
   if (entity.kind === "exit") {
     button.classList.add("interactive");
+    if (entity.passage) {
+      button.classList.add("passage");
+    }
   }
 
   if (entity.hotspotOnly) {
@@ -1514,7 +1521,7 @@ function renderEntity(entity) {
       image.style.mixBlendMode = "multiply";
     }
     button.appendChild(image);
-  } else if (!entity.hotspotOnly && entity.kind !== "inspect") {
+  } else if (!entity.hotspotOnly && entity.kind !== "inspect" && entity.kind !== "exit") {
     button.appendChild(createInlineSvgFallback(entity));
     state.fallbackLevel = Math.max(state.fallbackLevel, 1);
   }
