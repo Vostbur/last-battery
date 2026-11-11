@@ -384,7 +384,8 @@ const DOM = {
   winOverlay: document.getElementById("win-overlay"),
   winRestart: document.getElementById("win-restart"),
   minimapImage: document.getElementById("minimap-image"),
-  minimapFallback: document.getElementById("minimap-fallback")
+  minimapFallback: document.getElementById("minimap-fallback"),
+  minimapComms: document.getElementById("minimap-comms")
 };
 
 // ============================================================
