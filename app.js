@@ -38,7 +38,15 @@ const GAME_DATA = {
       name: "Бункер",
       description: "Тяжёлая дверь позади, впереди — тёмный зал с огромной машиной; на юг — выход.",
       background: "assets/locations/bunker.png",
-      entities: ["bunker_machine", "bunker_panel", "bunker_battery", "exit_south"]
+      entities: ["bunker_machine", "bunker_panel", "bunker_battery", "bunker_comms_exit", "exit_south"]
+    },
+
+    comms: {
+      id: "comms",
+      name: "Старый узел связи",
+      description: "Заброшенная радиорубка. Старый передатчик молчит, а единственный человек здесь будто ждал именно тебя.",
+      background: "assets/locations/comms.png",
+      entities: ["radio_operator", "radio_transmitter", "radio_cabinet", "radio_log", "exit_comms_bunker"]
     }
   },
 
@@ -81,6 +89,16 @@ const GAME_DATA = {
       canTake: false,
       canDrop: false,
       usableTargets: ["bunker_door"]
+    },
+
+    radio_coil: {
+      id: "radio_coil",
+      name: "Катушка связи",
+      description: "Старая катушка с контактами. Подходит к разъёму радиопередатчика.",
+      icon: "assets/items/radio_coil.png",
+      canTake: true,
+      canDrop: true,
+      usableTargets: ["radio_transmitter"]
     }
   },
 
@@ -191,6 +209,64 @@ const GAME_DATA = {
       position: { x: 300, y: 380, w: 180, h: 180 },
       label: "Последняя батарея",
       sprite: "assets/sprites/bunker_battery.png"
+    },
+
+    bunker_comms_exit: {
+      id: "bunker_comms_exit",
+      kind: "exit",
+      target: "comms",
+      position: { x: 1020, y: 150, w: 180, h: 300 },
+      label: "Войти в старый узел связи",
+      hotspotOnly: true
+    },
+
+    radio_operator: {
+      id: "radio_operator",
+      kind: "npc",
+      position: { x: 120, y: 310, w: 260, h: 330 },
+      label: "Радист"
+    },
+
+    radio_transmitter: {
+      id: "radio_transmitter",
+      kind: "inspect",
+      position: { x: 700, y: 235, w: 360, h: 250 },
+      label: "Радиопередатчик",
+      sprite: "assets/sprites/radio_transmitter.png"
+    },
+
+    radio_cabinet: {
+      id: "radio_cabinet",
+      kind: "inspect",
+      position: { x: 475, y: 360, w: 180, h: 220 },
+      label: "Технический шкаф",
+      sprite: "assets/sprites/radio_cabinet.png"
+    },
+
+    radio_log: {
+      id: "radio_log",
+      kind: "inspect",
+      position: { x: 390, y: 510, w: 100, h: 70 },
+      label: "Журнал сеансов связи",
+      sprite: "assets/sprites/radio_log.png"
+    },
+
+    radio_coil: {
+      id: "radio_coil",
+      kind: "item",
+      itemId: "radio_coil",
+      position: { x: 510, y: 430, w: 110, h: 110 },
+      label: "Катушка связи",
+      sprite: "assets/items/radio_coil.png"
+    },
+
+    exit_comms_bunker: {
+      id: "exit_comms_bunker",
+      kind: "exit",
+      target: "bunker",
+      position: { x: 0, y: 120, w: 170, h: 520 },
+      label: "Вернуться в бункер",
+      hotspotOnly: true
     }
   },
 
@@ -214,6 +290,17 @@ const GAME_DATA = {
         { id: "code", label: "Спросить про код" },
         { id: "battery", label: "Спросить про батарею" }
       ]
+    },
+
+    radio_operator: {
+      id: "radio_operator",
+      name: "Радист",
+      sprite: "assets/sprites/radio_operator.png",
+      topics: [
+        { id: "battery", label: "Спросить о батарее" },
+        { id: "signal", label: "Спросить о сигнале" },
+        { id: "coil", label: "Спросить о катушке" }
+      ]
     }
   }
 };
@@ -234,7 +321,8 @@ const INITIAL_STATE = {
   droppedItems: {
     shelter: {},
     market: {},
-    bunker: {}
+    bunker: {},
+    comms: {}
   },
 
   flags: {
@@ -242,6 +330,11 @@ const INITIAL_STATE = {
     bunker_door_open: false,
     bunker_machine_inspected: false,
     bunker_panel_inspected: false,
+    battery_activated: false,
+    comms_unlocked: false,
+    radio_log_read: false,
+    cabinet_open: false,
+    radio_started: false,
     game_won: false
   },
 
@@ -553,6 +646,10 @@ function hasOriginalWorldItem(itemId, locationId) {
     return !state.milestones.includes("found_lamp");
   }
 
+  if (locationId === "comms" && itemId === "radio_coil") {
+    return state.flags.cabinet_open && !state.milestones.includes("found_radio_coil");
+  }
+
   return false;
 }
 
@@ -631,11 +728,33 @@ function getSceneStateNote(entity) {
   }
 
   if (entity.id === "bunker_battery") {
-    return state.flags.game_won
-      ? "Батарея работает. Последняя."
+    return state.flags.battery_activated
+      ? "Батарея работает. От неё запитан старый контур."
       : state.flags.bunker_panel_inspected
         ? "Система активна. Батарея готова."
         : "Корпус цел. Сначала запусти систему.";
+  }
+
+  if (entity.id === "radio_transmitter") {
+    return state.flags.radio_started
+      ? "Передатчик отвечает слабым гулом."
+      : state.flags.battery_activated
+        ? "На панели появился аварийный сигнал. Нужна катушка."
+        : "Передатчик мёртв.";
+  }
+
+  if (entity.id === "radio_cabinet") {
+    return state.flags.cabinet_open
+      ? "Дверца открыта. Внутри лежит катушка."
+      : state.flags.radio_log_read
+        ? "Замок старый. Код из журнала должен подойти."
+        : "На дверце три цифры, но замок не реагирует.";
+  }
+
+  if (entity.id === "radio_log") {
+    return state.flags.radio_log_read
+      ? "Последние сеансы: 03:17, 06:42, 11:08."
+      : "Потрёпанный журнал сеансов связи.";
   }
 
   if (entity.id === "lamp") {
@@ -703,6 +822,16 @@ function getNpcSubtitle(npcId) {
     return hasItem("flask")
       ? "Он заметил вашу флягу."
       : "Он тяжело дышит и держится за бок.";
+  }
+
+  if (npcId === "radio_operator") {
+    if (state.flags.radio_started) {
+      return "Он слушает динамик и явно жалеет, что ты его запустил.";
+    }
+    if (state.flags.battery_activated) {
+      return "Он смотрит на индикатор передатчика. «Теперь узел снова слышит нас».";
+    }
+    return "Он сидит у выключенной радиостанции и почти не поднимает глаз.";
   }
 
   if (npcId === "trader") {
@@ -823,6 +952,25 @@ function handleNpcTopic(npcId, topicId) {
     }
   }
 
+  if (npcId === "radio_operator") {
+    if (topicId === "battery") {
+      addMessage("Радист: «Батарея? Если ты её нашёл, значит машина ещё жива. Но зачем ты её включил?»");
+      return;
+    }
+    if (topicId === "signal") {
+      addMessage(state.flags.battery_activated
+        ? "Радист: «Я слышал эти сигналы раньше. Они приходили из северного контура. Потом всё стихло.»"
+        : "Радист: «До отключения я ловил короткие сигналы с севера. После отключения — тишина.»");
+      return;
+    }
+    if (topicId === "coil") {
+      addMessage(state.flags.radio_log_read
+        ? "Радист: «Катушка должна быть в техническом шкафу. Код не записывай — 417. Я его помню.»"
+        : "Радист: «Без катушки передатчик не запустить. Ищи её в техническом шкафу.»");
+      return;
+    }
+  }
+
   if (npcId === "trader" && topicId === "battery") {
     if (!state.flags.bunker_door_open && !hasItem("code")) {
       addMessage("Торговец: «О батарее? Сначала доберись до бункера. Здесь такие вещи не обсуждают вслух».");
@@ -888,6 +1036,11 @@ function useItemOnTarget(itemId, targetId) {
 
   if (itemId === "code" && targetId === "bunker_door") {
     openBunkerDoor();
+    return;
+  }
+
+  if (itemId === "radio_coil" && targetId === "radio_transmitter") {
+    inspectBunkerEntity(targetId);
     return;
   }
 
@@ -964,18 +1117,91 @@ function inspectBunkerEntity(entityId) {
       return;
     }
 
-    if (!state.flags.game_won) {
-      state.flags.game_won = true;
+    if (!state.flags.battery_activated) {
+      state.flags.battery_activated = true;
+      state.flags.comms_unlocked = true;
       unlockMilestone(
         "found_battery",
         "Зелёный индикатор загорается ровно. Последняя батарея всё ещё работает."
       );
-      addMessage("Ты находишь источник питания. Последняя батарея не сдалась.");
-      render();
-      setTimeout(showWinScreen, 500);
+      unlockMilestone(
+        "activated_comms",
+        "Машина просыпается на несколько секунд. Где-то далеко оживает старый узел связи."
+      );
+      addMessage("Батарея включается. В глубине системы слышится короткий щелчок — будто проснулся передатчик.");
+      addMessage("На старой панели появляется координата: «Узел связи №7». Похоже, питание дошло до него.");
     } else {
-      addMessage("Батарея работает. Ты действительно нашёл последнюю.");
+      addMessage("Батарея работает. Теперь нужно проверить старый узел связи.");
     }
+    render();
+    return;
+  }
+
+  if (entityId === "radio_log") {
+    if (!state.flags.battery_activated) {
+      addMessage("Страницы покрыты пылью. Пока здесь нет смысла что-либо искать.");
+      return;
+    }
+    state.flags.radio_log_read = true;
+    unlockMilestone(
+      "read_radio_log",
+      "Последние записи: 03:17 — 4 сигнала; 06:42 — 1 сигнал; 11:08 — 7 сигналов. Похоже, это не время, а последовательность."
+    );
+    addMessage("В журнале три последних сеанса. Цифры 4–1–7 выделены карандашом.");
+    render();
+    return;
+  }
+
+  if (entityId === "radio_cabinet") {
+    if (!state.flags.battery_activated) {
+      addMessage("Шкаф заперт. Без питания электронный замок даже не просыпается.");
+      return;
+    }
+    if (!state.flags.radio_log_read) {
+      addMessage("Замок не реагирует. Нужна подсказка из старого журнала.");
+      return;
+    }
+    if (!state.flags.cabinet_open) {
+      state.flags.cabinet_open = true;
+      unlockMilestone(
+        "opened_radio_cabinet",
+        "Код 417 подходит. В шкафу лежит старая катушка связи с целыми контактами."
+      );
+      addMessage("Замок щёлкает. Внутри действительно есть катушка связи.");
+      if (!GAME_DATA.locations.comms.entities.includes("radio_coil")) {
+        GAME_DATA.locations.comms.entities.push("radio_coil");
+      }
+    } else {
+      addMessage("Шкаф уже открыт. Катушка лежит внутри.");
+    }
+    render();
+    return;
+  }
+
+  if (entityId === "radio_transmitter") {
+    if (!state.flags.battery_activated) {
+      addMessage("Передатчик мёртв. Сначала нужно вернуть питание.");
+      return;
+    }
+    if (!state.flags.radio_started) {
+      if (!hasItem("radio_coil")) {
+        addMessage("На корпусе виден пустой разъём. Нужна катушка связи.");
+        return;
+      }
+      removeInventory("radio_coil", 1);
+      state.flags.radio_started = true;
+      unlockMilestone(
+        "started_radio",
+        "Передатчик оживает. Из динамика сначала идёт только треск, затем появляется человеческий голос."
+      );
+      addMessage("Катушка встаёт на место. Передатчик отвечает слабым гулом.");
+      addMessage("Автоматический голос: «Узел №7 активирован. Обнаружен источник питания. Инициализация северного контура».");
+      addMessage("Радист бледнеет: «Ты не должен был этого делать».");
+    } else {
+      addMessage("Из динамика идёт тихий треск. Где-то далеко уже проснулся северный контур.");
+    }
+    render();
+    return;
   }
 }
 
@@ -1030,6 +1256,11 @@ function moveTo(locationId) {
     }
   }
 
+  if (state.location === "bunker" && locationId === "comms" && !state.flags.battery_activated) {
+    addMessage("За дальнейшей дверью пока ничего не слышно. Сначала нужно запустить систему бункера.");
+    return;
+  }
+
   state.selectedItem = null;
   clearSceneDialog();
 
@@ -1071,6 +1302,14 @@ function moveTo(locationId) {
         "returned_to_shelter_after_help",
         "В убежище всё по-прежнему пусто, но теперь тишина ощущается иначе: ты знаешь, что на рынке кому-то стало легче."
       );
+    }
+
+    if (locationId === "comms") {
+      unlockMilestone(
+        "entered_comms",
+        "Старый узел связи снова получает питание. В радиорубке тебя уже ждёт человек."
+      );
+      addMessage("Ты входишь в старый узел связи. Здесь пахнет пылью, металлом и перегретой проводкой.");
     }
 
     if (locationId === "bunker") {
@@ -1341,7 +1580,7 @@ function hideSceneActionHint() {
 function attachEntityAction(button, entity) {
   button.addEventListener("click", () => {
     if (state.selectedItem) {
-      if (entity.kind === "npc" || entity.kind === "door") {
+      if (entity.kind === "npc" || entity.kind === "door" || entity.kind === "inspect") {
         dispatchAction({
           type: "USE_ITEM",
           itemId: state.selectedItem,
@@ -1660,10 +1899,24 @@ function updateLocationText() {
   if (state.location === "bunker") {
     if (state.flags.game_won) {
       description = "Тяжёлая дверь закрылась. Машина работает, а последняя батарея даёт ровный зелёный свет.";
+    } else if (state.flags.battery_activated) {
+      description = "Машина работает. Где-то за стенами просыпается старый узел связи.";
     } else if (state.flags.bunker_panel_inspected) {
       description = "Переключатель поднят. В глубине зала уже слышно ровное гудение.";
     } else if (state.flags.bunker_machine_inspected) {
       description = "Машина жива. На панели управления есть старый механический переключатель.";
+    } else {
+      description = location.description;
+    }
+  }
+
+  if (state.location === "comms") {
+    if (state.flags.radio_started) {
+      description = "Передатчик работает. В динамике слышен треск, а радист не сводит глаз с северного индикатора.";
+    } else if (state.flags.cabinet_open) {
+      description = "Технический шкаф открыт. Катушка связи ждёт подключения к передатчику.";
+    } else if (state.flags.battery_activated) {
+      description = "Старый узел получил питание. Радист смотрит на передатчик, будто боится услышать ответ.";
     } else {
       description = location.description;
     }
@@ -1677,14 +1930,26 @@ function updateObjective() {
 
   if (state.flags.game_won) {
     objective = "Бункер найден. Батарея у тебя перед глазами.";
+  } else if (state.location === "comms" && !state.flags.battery_activated) {
+    objective = "Сначала восстанови питание в бункере.";
+  } else if (state.location === "comms" && !state.flags.radio_log_read) {
+    objective = "Осмотри журнал старых сеансов связи.";
+  } else if (state.location === "comms" && !state.flags.cabinet_open) {
+    objective = "Открой технический шкаф по подсказке из журнала.";
+  } else if (state.location === "comms" && !hasItem("radio_coil") && !state.flags.radio_started) {
+    objective = "Возьми катушку связи из технического шкафа.";
+  } else if (state.location === "comms" && !state.flags.radio_started) {
+    objective = "Установи катушку в радиопередатчик.";
+  } else if (state.location === "comms") {
+    objective = "Выслушай сообщение северного контура.";
   } else if (state.location === "bunker" && !state.flags.bunker_machine_inspected) {
     objective = "Осмотри машину в глубине бункера.";
   } else if (state.location === "bunker" && !state.flags.bunker_panel_inspected) {
     objective = "Найди на панели способ запустить систему.";
+  } else if (state.location === "bunker" && !state.flags.battery_activated) {
+    objective = "Активируй последнюю батарею.";
   } else if (state.location === "bunker") {
-    objective = "Осмотри батарею.";
-  } else if (state.flags.bunker_door_open) {
-    objective = "Войди в открытый бункер.";
+    objective = "Войди в старый узел связи.";
   } else if (hasItem("code")) {
     objective = "Используй код на двери бункера.";
   } else if (hasItem("filter", 2)) {
@@ -1806,7 +2071,8 @@ function loadGame() {
     restored.droppedItems = {
       shelter: { ...(payload.state.droppedItems?.shelter || {}) },
       market: { ...(payload.state.droppedItems?.market || {}) },
-      bunker: { ...(payload.state.droppedItems?.bunker || {}) }
+      bunker: { ...(payload.state.droppedItems?.bunker || {}) },
+      comms: { ...(payload.state.droppedItems?.comms || {}) }
     };
     restored.flags = {
       ...restored.flags,
@@ -1924,8 +2190,34 @@ function restoreLocationEntities() {
     "bunker_machine",
     "bunker_panel",
     "bunker_battery",
+    "bunker_comms_exit",
     "exit_south"
   ];
+
+  // Новый узел связи открывается только после запуска батареи.
+  // Его содержимое восстанавливается из флагов и сохранённого инвентаря.
+  GAME_DATA.locations.comms.entities = [
+    "radio_operator",
+    "radio_transmitter",
+    "radio_cabinet",
+    "radio_log",
+    "exit_comms_bunker"
+  ];
+
+  if (
+    state.flags.cabinet_open &&
+    !state.milestones.includes("found_radio_coil") &&
+    !hasItem("radio_coil") &&
+    !(state.droppedItems.comms?.radio_coil > 0)
+  ) {
+    GAME_DATA.locations.comms.entities.push("radio_coil");
+  }
+
+  Object.entries(state.droppedItems.comms || {}).forEach(([itemId, count]) => {
+    for (let i = 0; i < count; i += 1) {
+      GAME_DATA.locations.comms.entities.push(itemId);
+    }
+  });
 
   Object.entries(state.droppedItems.bunker || {}).forEach(([itemId, count]) => {
     for (let i = 0; i < count; i += 1) {
